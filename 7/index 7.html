@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Demo</title>
+  <script src="https://unpkg.com/react@16/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@16/umd/react-dom.development.js" crossorigin></script>
+  <script src="https://unpkg.com/babel-standalone@6/babel.js" crossorigin></script>
+</head>
+
+<body>
+  <div id="root"></div>
+  <style>
+    html {
+      margin: 0;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      margin: 8px;
+      line-height: 1.2;
+    }
+
+    .app {
+      max-width: 500px;
+    }
+
+    .header {
+      margin-bottom: 10px;
+      display: flex;
+      flex-direction: row;
+    }
+
+    .header .logo {
+      display: block;
+      width: 96px;
+      height: 96px;
+    }
+
+    .header nav {
+      margin-left: auto;
+    }
+
+    .header nav ul {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .header nav ul li {
+      margin: 0 15px 0 0;
+      padding: 0;
+      display: inline-block;
+    }
+
+    .header nav ul li:last-child {
+      margin: 0;
+    }
+
+    a {
+      color: #000;
+    }
+
+    .header nav ul li a.active {
+      font-weight: bold;
+    }
+
+    .page {
+      padding: 15px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      margin-bottom: 10px;
+    }
+
+    .page h1 {
+      margin: 0 0 20px 0;
+      padding: 0;
+      line-height: 1;
+    }
+
+    .page p:last-child {
+      margin: 0;
+    }
+
+    .clock {
+      padding: 15px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      margin-bottom: 10px;
+    }
+
+    .clock .value {
+      display: inline-block;
+      vertical-align: middle;
+      margin-right: 15px;
+    }
+
+    .clock .icon {
+      display: inline-block;
+      vertical-align: middle;
+      width: 15px;
+      height: 15px;
+      border-radius: 15px;
+    }
+
+    .clock .icon.day {
+      background-color: #ef7b00;
+    }
+
+    .clock .icon.night {
+      background-color: #2459a7;
+    }
+
+    .lot {
+      padding: 15px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      margin-bottom: 10px;
+    }
+
+    .lot.favorite {
+      border-color: #ffd7cb;
+      background: #ffd7cb;
+    }
+
+    button {
+      cursor: pointer;
+      border-radius: 4px;
+      padding: 4px 6px;
+      font-size: 0.8rem;
+      outline: none;
+    }
+
+    button:disabled {
+      cursor: wait;
+    }
+
+    button * {
+      vertical-align: middle;
+    }
+
+    button.favorite {
+      background: #fff;
+      border: 1px solid #999;
+      color: #000;
+    }
+
+    button.favorite:disabled {
+      background: #fff;
+      border: 1px solid #ccc;
+      color: #ccc;
+    }
+
+    button.unfavorite {
+      background: #fff;
+      border: 1px solid #ff8c68;
+      color: #dc0000;
+    }
+
+    button.unfavorite:disabled {
+      border: 1px solid #ffc0ad;
+      color: #ff8c68;
+    }
+
+    .lot .price {
+      float: right;
+      text-align: right;
+      font-size: 1.2rem;
+    }
+
+    .lot h1 {
+      margin: 0 0 15px 0;
+      line-height: 1;
+    }
+
+    .lot p {
+      margin: 0 0 15px 0;
+    }
+
+    .loading {
+      padding: 15px;
+      border-radius: 6px;
+      background: #eee;
+      text-align: center;
+    }
+
+    .error {
+      padding: 15px;
+      border-radius: 6px;
+      background: #ff5252;
+      color: #fff;
+      display: flex;
+      flex-direction: row;
+    }
+
+    .error span,
+    .error ion-icon {
+      display: flex;
+      vertical-align: middle;
+    }
+
+    .error ion-icon {
+      margin-left: auto;
+      cursor: pointer;
+    }
+  </style>
+  <script type="text/babel">
+
+  const api = {
+    get(url) {
+      switch (url) {
+        case '/lots':
+          return new Promise((resolve, reject) => {
+            setTimeout(() => {
+              resolve([
+                  {
+                    id: 1,
+                    name: 'Apple',
+                    description: 'Apple decription',
+                    price: '16'
+                  },
+                  {
+                    id: 2,
+                    name: 'Orange',
+                    description: 'Orange decription',
+                    price: '41'
+                  }
+                ])
+            }, 3000)
+          })
+        default:
+          throw new Error('Unknown adress')
+      }
+    }
+  }
+
+  const stream = {
+    subscribe(channel, listener) {
+      const match = /price-(\d+)/.exec(channel)
+      if (match) {
+        setInterval(() => {
+          listener({
+            id: parseInt(match[1]),
+            price: Math.round((Math.random() * 10 + 30))
+          })
+        }, 400)
+      }
+    }
+  }
+
+  // ###################################
+
+  const initialState = {
+    time: new Date(),
+    lots: null
+  }
+
+  class Store {
+    constructor( initialState ) {
+      this.state = initialState
+      this.listeners = []
+    }
+
+    getState() {
+      return this.state
+    }
+
+    subscribe(listener) {
+      this.listeners.push(listener)
+
+      return() => {
+        const index = this.listeners.indexOf(listener)
+        this.listeners.splice(index, 1)
+      }
+    }
+
+    setState(diff) {
+      this.state = (typeof state === 'function' ? state(this.state) : state)
+      this.listeners.forEach((listener) => listener())
+    }
+  }
+
+  const store = new Store(initialState)
+
+  // ###################################
+
+  function App({ state }) {
+    return (
+      <div className="app">
+        <Header />
+        <Clock time={state.time} />
+        <Lots lots={state.lots} />
+      </div>
+    )
+  }
+
+  function Header() {
+    return (
+      <header className="header">
+        <Logo />
+      </header>
+    )
+  }
+
+  function Logo() {
+    return <img className="logo" src="logo.png" alt=""/>
+  }
+
+  function Clock({ time }) {
+    const isDay = time.getHours() >= 7 && time.getHours() <= 21
+
+    return (
+      <div>
+        <span className="value">{time.toLocaleTimeString()}</span>
+        <span className={isDay ? 'icon day' : 'icon night'} />
+      </div>
+    )
+  }
+
+  function Loading() {
+    return <div className="loading">Loading...</div>
+  }
+
+  function Lots({ lots }) {
+    if (lots === null || lots === undefined) {
+      return <Loading />
+    }
+
+    return (
+      <div className="lots">
+        {lots.map((lot) => <Lot lot={lot} key={lot.id} />)}
+      </div>
+    )
+  }
+
+  function Lot({ lot }) {
+    return (
+      <article className="lot">
+        <div className="price">{lot.price}</div>
+        <h1>{lot.name}</h1>
+        <p>{lot.description}</p>
+      </article>
+    )
+  }
+
+  // ###################################
+  
+  function renderView(state) {
+    ReactDOM.render(
+      <App state={state} />,
+      document.getElementById('root')
+    )
+  }
+
+  const unsubscribe = store.subscribe(() => {
+    renderView(store.getState())
+  })
+
+  renderView(store.getState())
+
+  // ###################################
+
+  function setTime(state, time) {
+    return {
+      ...state,
+      time
+    }
+  }
+
+  setInterval(() => {
+    store.setState((state) => setTime(state, new Date()))
+  }, 1000)
+
+  api.get('/lots').then((lots) => {
+    store.setState((state) => ({
+      ...state,
+      lots
+    }))
+
+    const onPrice = (data) => {
+      store.setState((state) => ({
+        ...state,
+        lots: state.lots.map(lot => {
+          if (lot.id === data.id) {
+            return {
+              ...lot,
+              price: data.price
+            }
+          }
+          return lot
+        })
+      }))
+    }
+
+    lots.forEach((lot) => {
+      stream.subscribe(`price-${lot.id}`, onPrice)
+    })
+  })
+  </script>
+</body>
+
+</html>

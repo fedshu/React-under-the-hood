@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Demo</title>
+	<script src="https://unpkg.com/react@16/umd/react.development.js" crossorigin></script>
+	<script src="https://unpkg.com/react-dom@16/umd/react-dom.development.js" crossorigin></script>
+	<script src="https://unpkg.com/redux@4/dist/redux.js" crossorigin></script>
+	<script src="https://unpkg.com/react-redux@7/dist/react-redux.js" crossorigin></script>
+	<script src="https://unpkg.com/redux-thunk@2/dist/redux-thunk.js" crossorigin></script>
+	<script src="https://unpkg.com/@babel/standalone@7.12.6/babel.js" crossorigin></script>
+	<script src="https://unpkg.com/ionicons@5.2.3/dist/ionicons.js"></script>
+</head>
+
+<body>
+	<div id="root"></div>
+	<style>
+		html {
+			margin: 0;
+		}
+
+		body {
+			font-family: Arial, sans-serif;
+			margin: 8px;
+			line-height: 1.2;
+		}
+
+		.app {
+			max-width: 500px;
+		}
+
+		.header {
+			margin-bottom: 10px;
+			display: flex;
+			flex-direction: row;
+		}
+
+		.header .logo {
+			display: block;
+			width: 96px;
+			height: 96px;
+		}
+
+		.header nav {
+			margin-left: auto;
+		}
+
+		.header nav ul {
+			margin: 0;
+			padding: 0;
+			list-style: none;
+		}
+
+		.header nav ul li {
+			margin: 0 15px 0 0;
+			padding: 0;
+			display: inline-block;
+		}
+
+		.header nav ul li:last-child {
+			margin: 0;
+		}
+
+		a {
+			color: #000;
+		}
+
+		.header nav ul li a.active {
+			font-weight: bold;
+		}
+
+		.page {
+			padding: 15px;
+			border: 1px solid #ddd;
+			border-radius: 6px;
+			margin-bottom: 10px;
+		}
+
+		.page h1 {
+			margin: 0 0 20px 0;
+			padding: 0;
+			line-height: 1;
+		}
+
+		.page p:last-child {
+			margin: 0;
+		}
+
+		.clock {
+			padding: 15px;
+			border: 1px solid #ddd;
+			border-radius: 6px;
+			margin-bottom: 10px;
+		}
+
+		.clock .value {
+			display: inline-block;
+			vertical-align: middle;
+			margin-right: 15px;
+		}
+
+		.clock .icon {
+			display: inline-block;
+			vertical-align: middle;
+			width: 15px;
+			height: 15px;
+			border-radius: 15px;
+		}
+
+		.clock .icon.day {
+			background-color: #ef7b00;
+		}
+
+		.clock .icon.night {
+			background-color: #2459a7;
+		}
+
+		.lot {
+			padding: 15px;
+			border: 1px solid #ddd;
+			border-radius: 6px;
+			margin-bottom: 10px;
+		}
+
+		.lot.favorite {
+			border-color: #ffd7cb;
+			background: #ffd7cb;
+		}
+
+		button {
+			cursor: pointer;
+			border-radius: 4px;
+			padding: 4px 6px;
+			font-size: 0.8rem;
+			outline: none;
+		}
+
+		button:disabled {
+			cursor: wait;
+		}
+
+		button * {
+			vertical-align: middle;
+		}
+
+		button.favorite {
+			background: #fff;
+			border: 1px solid #999;
+			color: #000;
+		}
+
+		button.favorite:disabled {
+			background: #fff;
+			border: 1px solid #ccc;
+			color: #ccc;
+		}
+
+		button.unfavorite {
+			background: #fff;
+			border: 1px solid #ff8c68;
+			color: #dc0000;
+		}
+
+		button.unfavorite:disabled {
+			border: 1px solid #ffc0ad;
+			color: #ff8c68;
+		}
+
+		.lot .price {
+			float: right;
+			text-align: right;
+			font-size: 1.2rem;
+		}
+
+		.lot h1 {
+			margin: 0 0 15px 0;
+			line-height: 1;
+		}
+
+		.lot p {
+			margin: 0 0 15px 0;
+		}
+
+		.loading {
+			padding: 15px;
+			border-radius: 6px;
+			background: #eee;
+			text-align: center;
+		}
+
+		.error {
+			padding: 15px;
+			border-radius: 6px;
+			background: #ff5252;
+			color: #fff;
+			display: flex;
+			flex-direction: row;
+		}
+
+		.error span,
+		.error ion-icon {
+			display: flex;
+			vertical-align: middle;
+		}
+
+		.error ion-icon {
+			margin-left: auto;
+			cursor: pointer;
+		}
+	</style>
+	<script type="text/babel">
+
+		const api = {
+			get(url) {
+				switch (url) {
+					case '/lots':
+						return new Promise((resolve, reject) => {
+							setTimeout(() => {
+								resolve([
+									{
+										id: 1,
+										name: 'Apple',
+										description: 'Apple decription',
+										price: '16',
+										favorite: true
+									},
+									{
+										id: 2,
+										name: 'Orange',
+										description: 'Orange decription',
+										price: '41',
+										favorite: false
+									}
+								])
+							}, 1000)
+						})
+					default:
+						throw new Error('Unknown adress')
+				}
+			},
+			post(url) {
+				if (/^\/lots\/(\d+)\/favorite$/.exec(url)) {
+					return new Promise(resolve => {
+						setTimeout(() => {
+							resolve({})
+						}, 500)
+					})
+				}
+				if (/^\/lots\/(\d+)\/unfavorite$/.exec(url)) {
+					return new Promise(resolve => {
+						setTimeout(() => {
+							resolve({})
+						}, 500)
+					})
+				}
+				throw new Error('Unknown address')
+			}
+		}
+
+		const stream = {
+			subscribe: (channel, listener) => {
+				const match = /price-(\d+)/.exec(channel)
+				if (match) {
+					const interval = setInterval(() => {
+						listener({
+							id: parseInt(match[1]),
+							price: Math.round((Math.random() * 10 + 30))
+						})
+					}, 1000)
+					return () => clearInterval(interval)
+				}
+			}
+		}
+
+		// ###################################
+		const auctionInitialState = {
+			lots: null
+		}
+		function auctionReducer(state = auctionInitialState, action) {
+			switch (action.type) {
+				case SET_LOTS:
+					return {
+						...state,
+						lots: action.lots
+					}
+				case CHANGE_LOT_PRICE:
+					return {
+						...state,
+						lots: state.lots.map(lot => {
+							if (lot.id === action.id) {
+								return {
+									...lot,
+									price: action.price
+								}
+							}
+							return lot
+						})
+					}
+				case FAVORITE_LOT:
+					return {
+						...state,
+						lots: state.lots.map(lot => {
+							if (lot.id === action.id) {
+								return {
+									...lot,
+									id: Math.round((Math.random() * 10 + 30)),
+									favorite: true
+								}
+							}
+							return lot
+						})
+					}
+				case UNFAVORITE_LOT:
+					return {
+						...state,
+						lots: state.lots.map(lot => {
+							if (lot.id === action.id) {
+								return {
+									...lot,
+									id: Math.round((Math.random() * 10 + 30)),
+									favorite: false
+								}
+							}
+							return lot
+						})
+					}
+				default:
+					return state
+			}
+		}
+
+		const SET_LOTS = 'SET_LOTS'
+		const CHANGE_LOT_PRICE = 'CHANGE_LOT_PRICE'
+		const FAVORITE_LOT = 'FAVORITE_LOT'
+		const UNFAVORITE_LOT = 'UNFAVORITE_LOT'
+
+
+		// ###################################
+		// Action Creator
+
+		function setLots(lots) {
+			return {
+				type: SET_LOTS,
+				lots
+			}
+		}
+
+		function changeLotPrice(id, price) {
+			return {
+				type: CHANGE_LOT_PRICE,
+				id,
+				price
+			}
+		}
+
+		function favoriteLot(id) {
+			return {
+				type: FAVORITE_LOT,
+				id
+			}
+		}
+
+		function unfavoriteLot(id) {
+			return {
+				type: UNFAVORITE_LOT,
+				id
+			}
+		}
+
+		function favoriteAsync(id) {
+			return (dispatch, getState, { api }) => {
+				api.post(`/lots/${id}/favorite`).then(() => {
+					dispatch(favoriteLot(id))
+				})
+			}
+		}
+
+		function unfavoriteAsync(id) {
+			return (dispatch, getState, { api }) => {
+				api.post(`/lots/${id}/unfavorite`).then(() => {
+					dispatch(unfavoriteLot(id))
+				})
+			}
+		}
+
+        function loadLotsAsync() {
+            return (dispatch, getState, { api }) => {
+                api.get('/lots').then((lots) => {
+                    dispatch(setLots(lots))
+                })
+            }
+        }
+
+        function subscribeToLotPrice(id) {
+            return (dispatch, getState, { stream }) => {
+                return stream.subscribe(`price-${id}`, (data) => {
+                    dispatch(changeLotPrice(data.id, data.price))
+                })
+            }
+        }
+
+		// ###################################
+
+		const thunk = ReduxThunk.default
+
+		const store = Redux.createStore(
+			Redux.combineReducers({ auction: auctionReducer }),
+			Redux.applyMiddleware(thunk.withExtraArgument({ api, stream }))
+		)
+
+		// ###################################
+
+		function App() {
+			return (
+				<div className="app">
+					<Header />
+					<ClockContainer />
+					<LotsContainerConnected />
+				</div>
+			)
+		}
+
+		function Header() {
+			return (
+				<header className="header">
+					<Logo />
+				</header>
+			)
+		}
+
+		function Logo() {
+			return <img className="logo" src="logo.png" alt="" />
+		}
+
+		function ClockContainer() {
+			const [time, setTime] = React.useState(new Date())
+
+			React.useEffect(() => {
+				const interval = setInterval(() => {
+					setTime(new Date())
+				}, 1000)
+
+				return () => clearInterval(interval)
+			}, [setTime])
+
+			return <Clock time={time} />
+		}
+
+		function Clock({ time }) {
+			const isDay = time.getHours() >= 7 && time.getHours() <= 21
+
+			return (
+				<div>
+					<span className="value">{time.toLocaleTimeString()}</span>
+					<span className={isDay ? 'icon day' : 'icon night'} />
+				</div>
+			)
+		}
+
+		function Loading() {
+			return <div className="loading">Loading...</div>
+		}
+        
+        // ###################################
+
+        function LotsContainer({ lots, loaded, load }) {
+            React.useEffect(() => {
+				if (!loaded) {
+					load()
+				}
+			}, [loaded])
+
+			if (!loaded) {
+				return <Loading />
+			}
+
+            return <Lots lots={lots} />
+        }
+		
+		const lotsContainerMapStateToProps = (state) => ({
+			lots: state.auction.lots,
+			loaded: state.auction.lots !== null
+		})
+
+        const lotsContainerMapDispatchToProps = {
+			load: loadLotsAsync
+		}
+
+		const LotsContainerConnected = ReactRedux.connect(
+			lotsContainerMapStateToProps,
+			lotsContainerMapDispatchToProps
+		)(LotsContainer)
+
+		function Lots({ lots }) {
+			return (
+				<div className="lots">
+					{lots.map((lot) => <LotContainerConnected lot={lot} key={lot.id} />)}
+				</div>
+			)
+		}
+
+        // ###################################
+
+        function LotContainer({ lot, subscribe }) {
+            React.useEffect(() => {
+				return subscribe(lot.id)
+			}, [lot.id])
+
+            return <LotConnected lot={lot} />
+        }
+
+        const lotContainerMapDispatchToProps = {
+			subscribe: subscribeToLotPrice
+		}
+
+        const LotContainerConnected = ReactRedux.connect(null, lotContainerMapDispatchToProps)(LotContainer)
+
+		function Lot({ lot, favorite, unfavorite }) {
+			return (
+				<article className={'lot' + (lot.favorite ? ' favorite' : '')}>
+					<div className="price">{lot.price}</div>
+					<h1>{lot.name}</h1>
+					<p>{lot.description}</p>
+					<Favorite
+						active={lot.favorite}
+						favorite={() => favorite(lot.id)}
+						unfavorite={() => unfavorite(lot.id)}
+					/>
+				</article>
+			)
+		}
+
+		const lotMapDispatchToProps = {
+			favorite: favoriteAsync,
+			unfavorite: unfavoriteAsync
+		}
+
+		const LotConnected = ReactRedux.connect(null, lotMapDispatchToProps)(Lot)
+
+		function Favorite({ active, favorite, unfavorite }) {
+			return active ?
+				(
+					<button type="button" onClick={unfavorite} className="unfavorite">
+						<ion-icon name="heart-sharp" /> Unfavorite
+					</button>
+				) : (
+					<button type="button" onClick={favorite} className="favorite">
+						<ion-icon name="heart-outline" /> Favorite
+					</button>
+				)
+		}
+
+		// ###################################
+
+		ReactDOM.render(
+			<ReactRedux.Provider store={store}>
+				<App />
+			</ReactRedux.Provider>,
+			document.getElementById('root')
+		)
+
+		// ##################################
+
+	</script>
+</body>
+
+</html>
